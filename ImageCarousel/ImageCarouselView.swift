@@ -12,7 +12,7 @@ import Combine
 struct ImageCarouselView<Content: View>: View {
     private var numberOfImages: Int
     private var content: Content
-
+    @State var slideGesture: CGSize = CGSize.zero
     @State private var currentIndex: Int = 0
     private let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
 
@@ -31,9 +31,30 @@ struct ImageCarouselView<Content: View>: View {
                     .frame(width: geometry.size.width, height: geometry.size.height, alignment: .leading)
                     .offset(x: CGFloat(self.currentIndex) * -geometry.size.width, y: 0)
                     .animation(.spring())
+                    // Comment .onReceive method, to omit the Slider with time
                     .onReceive(self.timer) { _ in
-                        self.currentIndex = (self.currentIndex + 1) % (self.numberOfImages == 0 ? 1 : self.numberOfImages)
-                }
+                        self.currentIndex = (self.currentIndex + 1) % (self.numberOfImages == 0 ? 1 : self.numberOfImages)}
+                    // Comment .gesture method, to omit the Swipe function
+                    .gesture(DragGesture().onChanged{ value in
+                        self.slideGesture = value.translation
+                    }
+                                .onEnded{ value in
+                        if self.slideGesture.width < -50 {
+                            if self.currentIndex < self.numberOfImages - 1 {
+                                withAnimation {
+                                    self.currentIndex += 1
+                                }
+                            }
+                        }
+                        if self.slideGesture.width > 50 {
+                            if self.currentIndex > 0 {
+                                withAnimation {
+                                    self.currentIndex -= 1
+                                }
+                            }
+                        }
+                        self.slideGesture = .zero
+                    })
                 
                 // 2
                 HStack(spacing: 3) {
